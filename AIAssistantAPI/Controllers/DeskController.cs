@@ -12,6 +12,7 @@ namespace AIAssistantAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+
     public class DeskController : ControllerBase
     {
         private readonly IDeskService _DeskService;
