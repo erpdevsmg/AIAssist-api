@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>98ecfb66-7083-42ce-ae21-eb03a1c0c864</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileContext>.</DockerfileContext>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AspNetCoreRateLimit" Version="5.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.21" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.10" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AIAssistantAPI.Common\AIAssistantAPI.Common.csproj" />
+    <ProjectReference Include="..\AIAssistantAPI.Service\AIAssistantAPI.Service.csproj" />
+    <ProjectReference Include="..\AIAssistantAPI.DataAccess\AIAssistantAPI.DataAccess.csproj" />
+  </ItemGroup>
+
+</Project>
