@@ -10,6 +10,7 @@ namespace AIAssistantAPI.DataAccess.Model
     {
         public string? AI_Model { get; set; }
         public string? AI_ModelDesc { get; set; }
+        public decimal? Temperature { get; set; }
         public string? Remarks { get; set; }
         public bool? Active { get; set; }
     }
