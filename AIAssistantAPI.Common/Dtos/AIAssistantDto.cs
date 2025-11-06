@@ -16,6 +16,7 @@ namespace AIAssistantAPI.Common.Dtos
     public class AIModelDto
     {
         public string? AI_Model { get; set; }
+        public decimal? Temperature { get; set; }
     }
     public class AIDivisionDto
     {

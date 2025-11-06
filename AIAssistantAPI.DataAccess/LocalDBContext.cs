@@ -22,6 +22,7 @@ namespace AIAssistantAPI.DataAccess
         public DbSet<AI_Models> AI_Models { get; set; }
         public DbSet<AI_Divisions> AI_Divisions { get; set; }
         public DbSet<AI_Fields> AI_Fields { get; set; }
+        public DbSet<AI_MessageLog> AI_MessageLog { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -1038,6 +1039,11 @@ namespace AIAssistantAPI.DataAccess
                     .IsUnicode(false)
                     .IsRequired(false);
 
+                entity.Property(e => e.Temperature)
+                    .HasColumnName("Temperature")
+                    .HasColumnType("decimal(10,2)")
+                    .IsRequired(false);
+
                 entity.Property(e => e.Remarks)
                     .HasColumnName("Remarks")
                     .HasMaxLength(200)
@@ -1053,7 +1059,8 @@ namespace AIAssistantAPI.DataAccess
             {
                 entity.ToTable("AI_Divisions");
 
-                entity.HasKey(e => e.Division);
+                //entity.HasKey(e => new { e.Division, e.SubDivision });
+                entity.HasNoKey();
 
                 entity.Property(e => e.Division)
                     .HasColumnName("Division")
@@ -1126,6 +1133,89 @@ namespace AIAssistantAPI.DataAccess
                     .IsUnicode(false)
                     .IsRequired(false);
             });
+
+            modelBuilder.Entity<AI_MessageLog>(entity =>
+            {
+                entity.ToTable("AI_MessageLog");
+
+                // Primary Key
+                entity.HasKey(e => e.MessageId);
+
+                // Required Columns
+                entity.Property(e => e.MessageId)
+                      .IsRequired()
+                      .HasColumnName("message_id");
+
+                entity.Property(e => e.ConversationId)
+                      .IsRequired()
+                      .HasColumnName("conversation_id");
+
+                // Optional Columns
+                entity.Property(e => e.TurnIndex)
+                      .HasColumnName("turn_index");
+
+                entity.Property(e => e.Role)
+                      .HasMaxLength(16)
+                      .HasColumnName("role");
+
+                entity.Property(e => e.Content)
+                      .HasColumnName("content")
+                      .HasColumnType("nvarchar(max)");
+
+                entity.Property(e => e.CreatedUtc)
+                     .HasColumnName("created_utc")
+                     .HasColumnType("datetime2(3)");
+
+                entity.Property(e => e.Model)
+                      .HasMaxLength(64)
+                      .HasColumnName("model");
+
+                entity.Property(e => e.Temperature)
+                      .HasColumnType("decimal(4,2)")
+                      .HasColumnName("temperature");
+
+                entity.Property(e => e.LatencyMs)
+                      .HasColumnName("latency_ms");
+
+                entity.Property(e => e.TokensPrompt)
+                      .HasColumnName("tokens_prompt");
+
+                entity.Property(e => e.TokensCompletion)
+                      .HasColumnName("tokens_completion");
+
+                entity.Property(e => e.TokensTotal)
+                      .HasColumnName("tokens_total");
+
+                entity.Property(e => e.TaskType)
+                      .HasMaxLength(64)
+                      .HasColumnName("task_type");
+
+                entity.Property(e => e.AppUserHash)
+                      .HasMaxLength(64)
+                      .HasColumnName("app_user_hash")
+                      .IsFixedLength(true);
+
+                entity.Property(e => e.OrgId)
+                      .HasMaxLength(64)
+                      .HasColumnName("org_id");
+
+                entity.Property(e => e.ToolCallsJson)
+                      .HasColumnType("nvarchar(max)")
+                      .HasColumnName("tool_calls_json");
+
+                entity.Property(e => e.ResponseOk)
+                      .HasColumnName("response_ok");
+
+                entity.Property(e => e.ErrorType)
+                      .HasMaxLength(64)
+                      .HasColumnName("error_type");
+
+                entity.Property(e => e.DerivedJson)
+                      .HasColumnType("nvarchar(max)")
+                      .HasColumnName("derived_json");
+            });
+
+
         }
 
 

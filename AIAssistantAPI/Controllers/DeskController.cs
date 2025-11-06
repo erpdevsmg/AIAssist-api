@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AIAssistantAPI.Common.Dtos;
+using AIAssistantAPI.DataAccess.Model;
+using AIAssistantAPI.Service.Interface;
+using Azure.Core;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
-using AIAssistantAPI.DataAccess.Model;
-using AIAssistantAPI.Service.Interface;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -12,6 +14,7 @@ namespace AIAssistantAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+
     public class DeskController : ControllerBase
     {
         private readonly IDeskService _DeskService;
@@ -64,6 +67,81 @@ namespace AIAssistantAPI.Controllers
             var result = _DeskService.GetAIFields(divisionName);
             return Ok(new { Message = "Success", Data = result });
         }
+
+        [HttpGet("ExecuteSafeQuery")]
+        [Authorize]
+        public ActionResult ExecuteSafeQuery(string? sqlQuery, int? limit, int? page, string? sortBy, string? sortOrder)
+        {
+            string userUniqueId = "";
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                var userIds = User.FindFirst("UserID")?.Value;
+                if (userIds == null)
+                    return Unauthorized(new { message = "User not authenticated" });
+                else
+                    userUniqueId = userIds;
+            }
+            else
+            {
+                userUniqueId = userId;
+            }
+
+            var result = _DeskService.ExecuteSafeQuery(userUniqueId, sqlQuery, limit, page, sortBy, sortOrder);
+
+            return Ok(new
+            {
+                Message = "Success",
+                Data = result.Data,
+                Total = result.Total,
+                TotalPages = result.TotalPages
+            });
+        }
+
+        [HttpPost("SaveAIMessageLog")]
+        [Authorize]
+        public IActionResult SaveAIMessageLog([FromBody] AIMessageLogDto request)
+        {
+            string userUniqueId = "";
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                var userIds = User.FindFirst("UserID")?.Value;
+                if (userIds == null)
+                {
+                    return Ok(new { Message = "User not authenticated", IsError = true });
+                }
+                else
+                {
+                    userUniqueId = userIds;
+                }
+            }
+            else
+            {
+                userUniqueId = userId;
+            }
+
+            // ✅ Basic input validation
+            if (request == null)
+               return BadRequest(new { Message = "Request body is empty", IsError = true });
+
+            if (request.ConversationId == Guid.Empty)
+               return BadRequest(new { Message = "Conversation ID is required", IsError = true });
+
+            if (string.IsNullOrEmpty(request.Role))
+               return BadRequest(new { Message = "Role cannot be null or empty", IsError = true });
+
+            if (string.IsNullOrEmpty(request.Content))
+               return BadRequest(new { Message = "Content cannot be null or empty", IsError = true });
+
+            // ✅ Attach user info (optional)
+            request.AppUserHash = userUniqueId;
+
+            bool result = _DeskService.SaveAIMessageLog(request);
+            return Ok(new { Message = result ? "Success" : "Failed to save approval", IsError = !result });
+        }
+
 
         [HttpGet("me")]
         [Authorize]

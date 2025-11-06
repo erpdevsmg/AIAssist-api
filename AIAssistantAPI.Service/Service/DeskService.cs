@@ -120,6 +120,7 @@ namespace AIAssistantAPI.Service.Service
                 {
                     var dto = new AIModelDto();
                     dto.AI_Model = item.AI_Model;
+                    dto.Temperature = item.Temperature;
                     list.Add(dto);
                 }
             }
@@ -183,6 +184,172 @@ namespace AIAssistantAPI.Service.Service
 
             return list;
         }
+
+        public (List<dynamic> Data, int Total, int TotalPages) ExecuteSafeQuery(
+    string userUniqueId,
+    string? sqlQuery,
+    int? limit,
+    int? page,
+    string? sortBy,
+    string? sortOrder)
+        {
+            int total = 0;
+            int totalPages = 0;
+            List<dynamic> result = new();
+
+            if (string.IsNullOrWhiteSpace(sqlQuery))
+                return (result, total, totalPages);
+
+            using var connection = CreateConnection();
+
+            try
+            {
+                // --- Count total rows (if possible) ---
+                var countSql = $"SELECT COUNT(1) FROM ({sqlQuery}) AS CountQuery";
+                total = connection.ExecuteScalar<int>(countSql);
+
+                if (limit.HasValue && limit.Value > 0)
+                    totalPages = (int)Math.Ceiling(total / (double)limit.Value);
+            }
+            catch
+            {
+                // COUNT may fail for grouped or aggregated queries — ignore safely
+                total = 0;
+            }
+
+            // --- Prepare paginated SQL ---
+            string paginatedSql = sqlQuery.Trim();
+
+            // Add ORDER BY (explicit or fallback)
+            if (!string.IsNullOrEmpty(sortBy))
+            {
+                sortOrder = string.IsNullOrEmpty(sortOrder) ? "ASC" : sortOrder.ToUpper();
+                paginatedSql += $" ORDER BY {sortBy} {sortOrder}";
+            }
+            else
+            {
+                // --- Handle DISTINCT fallback ordering ---
+                if (sqlQuery.TrimStart().StartsWith("SELECT DISTINCT", StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        // Try to extract first column from DISTINCT clause
+                        var match = Regex.Match(sqlQuery, @"SELECT\s+DISTINCT\s+([\w\.\[\]]+)", RegexOptions.IgnoreCase);
+                        if (match.Success)
+                        {
+                            string firstColumn = match.Groups[1].Value;
+                            paginatedSql += $" ORDER BY {firstColumn}";
+                        }
+                        else
+                        {
+                            paginatedSql += " ORDER BY (SELECT 1)";
+                        }
+                    }
+                    catch
+                    {
+                        paginatedSql += " ORDER BY (SELECT 1)";
+                    }
+                }
+                else
+                {
+                    // Fallback to a dummy ORDER for pagination
+                    paginatedSql += " ORDER BY (SELECT 1)";
+                }
+            }
+
+            // --- Apply pagination ---
+            if (limit.HasValue && page.HasValue && limit.Value > 0 && page.Value > 0)
+            {
+                int skip = (page.Value - 1) * limit.Value;
+                paginatedSql += $" OFFSET {skip} ROWS FETCH NEXT {limit.Value} ROWS ONLY";
+            }
+
+            try
+            {
+                result = connection.Query(paginatedSql).ToList();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"SQL execution error: {ex.Message}");
+            }
+
+            return (result, total, totalPages);
+        }
+
+
+
+        public bool SaveAIMessageLog(AIMessageLogDto data)
+        {
+            try
+            {
+                // 🔍 Check if message already exists by MessageId
+                var existingMessage = context.AI_MessageLog
+                    .FirstOrDefault(x => x.MessageId == data.MessageId);
+
+                if (existingMessage == null)
+                {
+                    // ✅ INSERT NEW
+                    var newLog = new AI_MessageLog
+                    {
+                        MessageId = data.MessageId == Guid.Empty ? Guid.NewGuid() : data.MessageId,
+                        ConversationId = data.ConversationId,
+                        TurnIndex = data.TurnIndex,
+                        Role = data.Role,
+                        Content = data.Content,
+                        CreatedUtc = data.CreatedUtc ?? DateTime.UtcNow,
+                        Model = data.Model,
+                        Temperature = data.Temperature,
+                        LatencyMs = data.LatencyMs,
+                        TokensPrompt = data.TokensPrompt,
+                        TokensCompletion = data.TokensCompletion,
+                        TokensTotal = data.TokensTotal,
+                        TaskType = data.TaskType,
+                        AppUserHash = data.AppUserHash,
+                        OrgId = data.OrgId,
+                        ToolCallsJson = data.ToolCallsJson,
+                        ResponseOk = data.ResponseOk,
+                        ErrorType = data.ErrorType,
+                        DerivedJson = data.DerivedJson
+                    };
+
+                    context.AI_MessageLog.Add(newLog);
+                    context.SaveChanges();
+                    return true;
+                }
+                else
+                {
+                    // ✅ UPDATE EXISTING
+                    existingMessage.ConversationId = data.ConversationId;
+                    existingMessage.TurnIndex = data.TurnIndex;
+                    existingMessage.Role = data.Role;
+                    existingMessage.Content = data.Content;
+                    existingMessage.CreatedUtc = data.CreatedUtc ?? DateTime.UtcNow;
+                    existingMessage.Model = data.Model;
+                    existingMessage.Temperature = data.Temperature;
+                    existingMessage.LatencyMs = data.LatencyMs;
+                    existingMessage.TokensPrompt = data.TokensPrompt;
+                    existingMessage.TokensCompletion = data.TokensCompletion;
+                    existingMessage.TokensTotal = data.TokensTotal;
+                    existingMessage.TaskType = data.TaskType;
+                    existingMessage.AppUserHash = data.AppUserHash;
+                    existingMessage.OrgId = data.OrgId;
+                    existingMessage.ToolCallsJson = data.ToolCallsJson;
+                    existingMessage.ResponseOk = data.ResponseOk;
+                    existingMessage.ErrorType = data.ErrorType;
+                    existingMessage.DerivedJson = data.DerivedJson;
+
+                    context.Entry(existingMessage).State = EntityState.Modified;
+                    context.SaveChanges();
+                    return true;
+                }
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+
 
     }
 }
