@@ -97,20 +97,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // Register CORS policy
 builder.Services.AddCors(options =>
 {
-    //options.AddPolicy("AllowSpecificOrigin", policy =>
-    //{
-    //    policy.WithOrigins("https://exam.nautixsuite.com") // Add your frontend URL here
-    //          .AllowAnyHeader()
-    //          .AllowAnyMethod()
-    //            .AllowCredentials();
-    //});
     options.AddPolicy("AllowSpecificOrigin", policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://172.16.1.145:5173", "https://exam.stanford-marine.com", "https://exam.nautixsuite.com") // Add your frontend URL here
+        policy.WithOrigins("https://ai-api.nautixsuite.com", "https://ai-api-stage.nautixsuite.com") // Add your frontend URL here
               .AllowAnyHeader()
               .AllowAnyMethod()
                 .AllowCredentials();
     });
+    //options.AddPolicy("AllowSpecificOrigin", policy =>
+    //{
+    //    policy.WithOrigins("http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://172.16.1.145:5173", "https://exam.stanford-marine.com", "https://exam.nautixsuite.com") // Add your frontend URL here
+    //          .AllowAnyHeader()
+    //          .AllowAnyMethod()
+    //            .AllowCredentials();
+    //});
 });
 
 
@@ -127,13 +127,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-app.UseSwagger();
-app.UseSwaggerUI();
+//app.UseSwagger();
+//app.UseSwaggerUI();
 app.UseCors("AllowSpecificOrigin");
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
-
+app.MapGet("/", context =>
+{
+    context.Response.Redirect("/api/HealthTest/HealthCheck");
+    return Task.CompletedTask;
+});
 app.MapControllers();
 
 app.Run();
