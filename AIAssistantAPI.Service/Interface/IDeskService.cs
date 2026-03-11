@@ -16,5 +16,8 @@ namespace AIAssistantAPI.Service.Interface
         List<AIDivisionDto> GetAIDivisions();
         AIDivisionPromptDto GetAIDivisionsSystemPrompt(string divisionName);
         List<AIFieldDto> GetAIFields(string divisionName);
+        (List<dynamic> Data, int Total, int TotalPages) ExecuteSafeQuery(
+       string userUniqueId, string? sqlQuery, int? limit, int? page, string? sortBy, string? sortOrder);
+        bool SaveAIMessageLog(AIMessageLogDto data);
     }
 }
