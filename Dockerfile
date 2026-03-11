@@ -14,10 +14,10 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 #COPY ["AIAssistantAPI.csproj", "."]
 COPY ["AIAssistantAPI/AIAssistantAPI.csproj", "AIAssistantAPI/"]
-RUN dotnet restore "./AIAssistantAPI.csproj"
+RUN dotnet restore "./AIAssistantAPI/AIAssistantAPI.csproj"
 COPY . .
 WORKDIR "/src/."
-RUN dotnet build "./AIAssistantAPI/AIAssistantAPI.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build "./AIAssistantAPI.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # This stage is used to publish the service project to be copied to the final stage
 FROM build AS publish
