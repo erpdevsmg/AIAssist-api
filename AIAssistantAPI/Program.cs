@@ -104,6 +104,7 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod()
                 .AllowCredentials();
     });
+
     //options.AddPolicy("AllowSpecificOrigin", policy =>
     //{
     //    policy.WithOrigins("http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://172.16.1.145:5173", "https://exam.stanford-marine.com", "https://exam.nautixsuite.com") // Add your frontend URL here
